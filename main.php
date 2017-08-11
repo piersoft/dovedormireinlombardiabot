@@ -82,6 +82,7 @@ function start($telegram,$update)
 
 		elseif(strpos($text,'/') === false){
 			$string=0;
+
 $all=0;
 $string="";
 $filter="";
@@ -92,7 +93,7 @@ if(strpos($text,'!') !== false) {
 }
 			if(strpos($text,'?') !== false){
 				$text=str_replace("?","",$text);
-				$location="Sto cercando ".$string."le strutture aventi nel titolo <b>".$text."</b>";
+				$location="Sto cercando ".$string."le strutture contenenti <b>".$text."</b>";
 				$content = array('chat_id' => $chat_id, 'text' => $location,'disable_web_page_preview'=>true,'parse_mode'=>"HTML");
 				$telegram->sendMessage($content);
 				$string=1;
@@ -104,13 +105,20 @@ if(strpos($text,'!') !== false) {
 				$string=0;
 		//		sleep (1);
 			}
+			$json_string="";
 if ($string==0){
 	$filter="nome_comune";
+	$text=str_replace(" ","%20",$text);
+	$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson?".$filter."=".strtoupper($text))	;
+
 }else{
 	$filter="denominazione_struttura";
+	$text=str_replace(" ","%20",$text);
+	$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson?%24q=".strtoupper($text))	;
+
 }
 			$homepage="";
-$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson?".$filter."=".strtoupper($text))	;
+//$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson?".$filter."=".strtoupper($text))	;
 
 			$parsed_json = json_decode($json_string);
 
@@ -134,7 +142,7 @@ foreach ($parsed_json->{'features'} as $i => $value) {
 
 				$homepage = "Nome: <b>".$parsed_json->{'features'}[$i]->{'properties'}->{'denominazione_struttura'}."</b>\n";
 				if ($string!=0) $homepage .= "Località: <b>".$parsed_json->{'features'}[$i]->{'properties'}->{'nome_comune'}."</b>\n";
-				$homepage .= "Tipologia: <b>".$parsed_json->{'features'}[$i]->{'properties'}->{'classificazione'}."</b>\n";
+				$homepage .= "Tipologia: <b>".utf8_decode($parsed_json->{'features'}[$i]->{'properties'}->{'classificazione'})."</b>\n";
 				$homepage .= "Clicca per dettagli: /".$parsed_json->{'features'}[$i]->{'properties'}->{'id_struttura'}."\n";
 				$homepage .="____________";
 				$chunks = str_split($homepage, self::MAX_LENGTH);
@@ -195,7 +203,7 @@ foreach ($parsed_json->{'features'} as $i => $value) {
 
 	$ciclo++;
 	$homepage = "Nome: <b>".$parsed_json->{'features'}[$i]->{'properties'}->{'denominazione_struttura'}."</b>\n";
-	$homepage .= "Tipologia: <b>".$parsed_json->{'features'}[$i]->{'properties'}->{'classificazione'}."</b>\n";
+	$homepage .= "Tipologia: <b>".utf8_decode($parsed_json->{'features'}[$i]->{'properties'}->{'classificazione'})."</b>\n";
 	if ($parsed_json->{'features'}[$i]->{'properties'}->{'attrezzature'} !=null) $homepage .= "Attrezzature: ".strip_tags($parsed_json->{'features'}[$i]->{'properties'}->{'attrezzature'})."\n";
 		$homepage .= "Località: ".$parsed_json->{'features'}[$i]->{'properties'}->{'nome_comune'}."\n";
 		$homepage .= "Indirizzo: ".$parsed_json->{'features'}[$i]->{'properties'}->{'indirizzo'}."\n";
