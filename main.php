@@ -290,8 +290,10 @@ function location_manager($telegram,$user_id,$chat_id,$location)
 
 			  $alert="";
 				$homepage="";
-	$json_string=file_get_contents("hhttps://www.dati.lombardia.it/resource/366u-u4cw.geojson");
+	//$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson");
+	$filter="nome_comune";
 
+	$json_string=file_get_contents("https://www.dati.lombardia.it/resource/366u-u4cw.geojson?".$filter."=".strtoupper($comune))	;
 				$parsed_json = json_decode($json_string);
 
 	$ciclo=0;
@@ -304,10 +306,10 @@ foreach ($parsed_json->{'features'} as $i => $value) {
 	$filter=$parsed_json->{'features'}[$i]->{'properties'}->{'nome_comune'};
 
 
-if (strpos(strtoupper($filter),strtoupper($comune)) !== false ){
+//if (stristr($filter,$comune) !== false ){
 $ciclo++;
-		$lat10=floatval($parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[0]);
-		$long10=floatval($parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[1]);
+		$lat10=floatval($parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[1]);
+		$long10=floatval($parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[0]);
 		$theta = floatval($lon)-floatval($long10);
 		$dist =floatval( sin(deg2rad($lat)) * sin(deg2rad($lat10)) +  cos(deg2rad($lat)) * cos(deg2rad($lat10)) * cos(deg2rad($theta)));
 		$dist = floatval(acos($dist));
@@ -339,12 +341,16 @@ $ciclo++;
 
 		$csv[$i][104]= array("lon" => "value");
 
-		$csv[$i][104]= $parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[0];
+		$csv[$i][104]= $parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[1];
 		$csv[$i][105]= array("lat" => "value");
 
-		$csv[$i][105]= $parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[1];
+		$csv[$i][105]= $parsed_json->{'features'}[$i]->{'geometry'}->{'coordinates'}[0];
 
-}
+		$csv[$i][106]= array("id" => "value");
+
+		$csv[$i][106]= $i;
+
+//}
 }
 
 sort($csv);
@@ -362,7 +368,7 @@ $ciclo2++;
 		$homepage .="<a href='".$location2."'>Portami QUI</a>";
 
 
-		$homepage .="\n____________";
+		$homepage .="\n____________\n";
 		$chunks = str_split($homepage, self::MAX_LENGTH);
 		foreach($chunks as $chunk) {
 		$content = array('chat_id' => $chat_id, 'text' => $chunk,'disable_web_page_preview'=>true,'parse_mode'=>"HTML");
